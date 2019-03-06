@@ -149,16 +149,72 @@ var WaveformGenerator = {
                 **/
 
                 // Obtain all the required parameters
-                var carrierFrequency = parseInt($("#fm-carrier-frequency").val());
+                var carrierFrequency = parseFloat($("#fm-carrier-frequency").val());
                 var carrierAmplitude = parseFloat($("#fm-carrier-amplitude").val());
-                var modulationFrequency = parseInt($("#fm-modulation-frequency").val());
+                var modulationFrequency = parseFloat($("#fm-modulation-frequency").val());
                 var modulationAmplitude = parseFloat($("#fm-modulation-amplitude").val());
+                
+                var useFreqMultiplier =  $("#fm-use-freq-multiplier").prop("checked");
+                if (useFreqMultiplier){
+                    carrierFrequency *= frequency;
+                    modulationFrequency *= frequency;
+                }
+                
                 var useADSR = $("#fm-use-adsr").prop("checked");
                 if(useADSR) { // Obtain the ADSR parameters
                     var attackDuration = parseFloat($("#fm-adsr-attack-duration").val()) * sampleRate;
                     var decayDuration = parseFloat($("#fm-adsr-decay-duration").val()) * sampleRate;
                     var releaseDuration = parseFloat($("#fm-adsr-release-duration").val()) * sampleRate;
                     var sustainLevel = parseFloat($("#fm-adsr-sustain-level").val()) / 100.0;
+                }
+                
+                for (var i = 0; i < totalSamples; ++i) {
+                    
+                    var t = i / sampleRate;
+                    
+                    var modulator = modulationAmplitude * Math.sin(2 * Math.PI * modulationFrequency * t);
+                    
+                    if (useADSR){
+                        
+                        var attackDuration = parseFloat($("#fm-adsr-attack-duration").val()) * sampleRate;
+                        var decayDuration = parseFloat($("#fm-adsr-decay-duration").val()) * sampleRate;
+                        var releaseDuration = parseFloat($("#fm-adsr-release-duration").val()) * sampleRate;
+                        var sustainLevel = parseFloat($("#fm-adsr-sustain-level").val()) / 100.0;
+                        
+                        var multiplier = 0.0;
+                        
+                        // index for the start of the decay duration
+                        var decayStart = attackDuration;
+                        
+                        // index for the start of the release duration
+                        var releaseStart = totalSamples - releaseDuration - 1;
+                        
+                        // Attack Section
+                        if (i < attackDuration){
+                            
+                            multiplier = lerp(0.00, 1.00, i / attackDuration);
+                            
+                        }
+                        // Decay Section
+                        else if (i < (attackDuration + decayDuration)){
+                            
+                            multiplier = lerp(1.00, sustainLevel, (i-attackDuration) / decayDuration);
+                            
+                        } 
+                        // Release Section
+                        else if (i >= (totalSamples - releaseDuration - 1)){
+                            
+                            multiplier = lerp(sustainLevel, 0.00, (i - releaseStart)/releaseDuration);
+                        }
+                        // Sustain Section
+                        else {
+                            multiplier = sustainLevel;
+                        }
+                        
+                        modulator *= multiplier;
+                    }
+                    
+                    result.push (carrierAmplitude * Math.sin(2 * Math.PI * carrierFrequency * t + modulator));
                 }
 
                 break;

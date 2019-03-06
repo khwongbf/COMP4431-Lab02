@@ -18,10 +18,13 @@ Postprocessor = {
                 // Post-process every channels
                 for(var c = 0; c < channels.length; ++c) {
                     // Get the sample data of the channel
-
+                    var audioSequence = channels[c].audioSequenceReference;
+                    
                     // Apply the post-processing, i.e. reverse
-
+                    audioSequence.data = audioSequence.data.reverse();
+                    
                     // Update the sample data with the post-processed data
+                    channels[c].setAudioSequence(audioSequence);
                 }
                 break;
 
@@ -71,11 +74,43 @@ Postprocessor = {
                     var audioSequence = channels[c].audioSequenceReference;
 
                     for(var i = 0; i < audioSequence.data.length; ++i) {
+                        
+                        var multiplier = 0.0;
 
                         // TODO: Complete the ADSR postprocessor
-                        // Hinst: You can use the function lerp() in utility.js
+                        // Hint: You can use the function lerp() in utility.js
                         // for performing linear interpolation
                         
+                        // index for the start of the decay duration
+                        var decayStart = attackDuration;
+                        
+                        // index for the start of the release duration
+                        var releaseStart = audioSequence.data.length - releaseDuration - 1;
+                        
+                        // Attack Section
+                        if (i < attackDuration){
+                            
+                            multiplier = lerp(0.00, 1.00, i / attackDuration);
+                            
+                        }
+                        // Decay Section
+                        else if (i < (attackDuration + decayDuration)){
+                            
+                            multiplier = lerp(1.00, sustainLevel, (i-attackDuration) / decayDuration);
+                            
+                        } 
+                        // Release Section
+                        else if (i >= (audioSequence.data.length - releaseDuration - 1)){
+                            
+                            multiplier = lerp(sustainLevel, 0.00, (i - releaseStart)/releaseDuration);
+                        }
+                        // Sustain Section
+                        else {
+                            multiplier = sustainLevel;
+                        }
+                        
+                        // Apply multiplier for each sample
+                        audioSequence.data[i] *= multiplier;
                     }
 
                     // Update the sample data with the post-processed data
