@@ -19,10 +19,10 @@ Postprocessor = {
                 for(var c = 0; c < channels.length; ++c) {
                     // Get the sample data of the channel
                     var audioSequence = channels[c].audioSequenceReference;
-                    
+
                     // Apply the post-processing, i.e. reverse
                     audioSequence.data = audioSequence.data.reverse();
-                    
+
                     // Update the sample data with the post-processed data
                     channels[c].setAudioSequence(audioSequence);
                 }
@@ -74,41 +74,41 @@ Postprocessor = {
                     var audioSequence = channels[c].audioSequenceReference;
 
                     for(var i = 0; i < audioSequence.data.length; ++i) {
-                        
+
                         var multiplier = 0.0;
 
                         // TODO: Complete the ADSR postprocessor
                         // Hint: You can use the function lerp() in utility.js
                         // for performing linear interpolation
-                        
+
                         // index for the start of the decay duration
                         var decayStart = attackDuration;
-                        
+
                         // index for the start of the release duration
                         var releaseStart = audioSequence.data.length - releaseDuration - 1;
-                        
+
                         // Attack Section
                         if (i < attackDuration){
-                            
+
                             multiplier = lerp(0.00, 1.00, i / attackDuration);
-                            
+
                         }
                         // Decay Section
                         else if (i < (attackDuration + decayDuration)){
-                            
+
                             multiplier = lerp(1.00, sustainLevel, (i-attackDuration) / decayDuration);
-                            
-                        } 
+
+                        }
                         // Release Section
                         else if (i >= (audioSequence.data.length - releaseDuration - 1)){
-                            
+
                             multiplier = lerp(sustainLevel, 0.00, (i - releaseStart)/releaseDuration);
                         }
                         // Sustain Section
                         else {
                             multiplier = sustainLevel;
                         }
-                        
+
                         // Apply multiplier for each sample
                         audioSequence.data[i] *= multiplier;
                     }
@@ -129,11 +129,29 @@ Postprocessor = {
 
                 // Post-process every channels
                 for(var c = 0; c < channels.length; ++c) {
+
                     // Get the sample data of the channel
+					var audioSequence = channels[c].audioSequenceReference;
 
                     // For every sample, apply a tremolo multiplier
+                    for(var i = 0; i < audioSequence.data.length; ++i) {
+						// Get the current time of the sample
+						var currentTime = i / audioSequence.sampleRate;
+
+						// calculate the shift to be Math.PI / 2
+						var theta = Math.PI / 2;
+
+						// calculate the multiplier
+						var multiplier = (sin(2 * Math.PI * tremoloFrequency * currentTime - theta) + 1) / 2;
+
+						multiplier = multiplier * wetness + (1 - wetness);
+
+						// apply the multiplier to the data
+						audioSequence.data[i] *= multiplier;
+					}
 
                     // Update the sample data with the post-processed data
+                    channels[c].setAudioSequence(audioSequence);
                 }
                 break;
 
@@ -149,22 +167,38 @@ Postprocessor = {
                 // Post-process every channels
                 for(var c = 0; c < channels.length; ++c) {
                     // Get the sample data of the channel
+                    var audioSequence = channels[c].audioSequenceReference;
 
                     // Create a new empty delay line
+                    //  Calculate the length of the delay line
+                    var delayLineSize = parseInt(delayLineDuration * audioSequence.sampleRate);
+
+					// Create the delay line
+					var delayLine = [];
+					for (var i = 0; i < delayLineSize; i++){
+						delayLine.push(0);
+					}
+
+					// Output of the delay line (temporary storage)
+					var delayLineOutput;
 
                     // Get the sample data of the channel
                     for(var i = 0; i < audioSequence.data.length; ++i) {
                         // Get the echoed sample from the delay line
+						delayLineOutput = delayLine[i % delayLineSize];
 
                         // Add the echoed sample to the current sample, with a multiplier
+                        audioSequence.data[i] += delayLineOutput * multiplier;
 
                         // Put the current sample into the delay line
+                        delayLine[i % delayLineSize] = audioSequence.data[i];
                     }
 
                     // Update the sample data with the post-processed data
+                    channels[c].setAudioSequence(audioSequence);
                 }
                 break;
-            
+
             default:
                 // Do nothing
                 break;
