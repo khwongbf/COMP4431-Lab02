@@ -118,22 +118,25 @@ var WaveformGenerator = {
 					var sample = 0;
 					if (i <= delay){
 						if (base == "white-noise"){
-							sample = 2 * Math.random() – 1;
+							// White noise
+							sample = 2 * Math.random() - 1;
+							sample *= amp;
 						}
 						else {
+							// Sawtooth
 							var oneCycle = sampleRate / frequency;
 							var whereInTheCycle = i % parseInt(oneCycle);
 							var fractionInTheCycle = whereInTheCycle / oneCycle;
-							sample = amp *( 2 * (1.0 - fractionInTheCycle) - 1);
+							sample = amp * ( 2 * (1.0 - fractionInTheCycle) - 1);
 						}
 					}
 					else{
 						var t = Math.random();
 						if (t < b){
-							sample = 0.5 * (samples[i–delay] + samples[i–delay-1]);
+							sample = 0.5 * (result[i - delay] + result[i - delay - 1]);
 						}
 						else{
-							sample = -1 * 0.5 * (samples[i–delay] + samples[i–delay-1]);
+							sample = -1 * 0.5 * (result[i - delay] + result[i - delay - 1]);
 						}
 
 					}
@@ -148,6 +151,7 @@ var WaveformGenerator = {
                 **/
                 for (var i = 0; i < totalSamples; ++i) {
 					var currentAmplitude = Math.random() * 2 -1;
+					currentAmplitude *= amp;
 				    result.push(currentAmplitude);
                 }
                 break;

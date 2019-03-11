@@ -142,7 +142,7 @@ Postprocessor = {
 						var theta = Math.PI / 2;
 
 						// calculate the multiplier
-						var multiplier = (sin(2 * Math.PI * tremoloFrequency * currentTime - theta) + 1) / 2;
+						var multiplier = ( Math.sin(2 * Math.PI * tremoloFrequency * currentTime - theta) + 1) / 2;
 
 						multiplier = multiplier * wetness + (1 - wetness);
 
@@ -188,7 +188,8 @@ Postprocessor = {
 						delayLineOutput = delayLine[i % delayLineSize];
 
                         // Add the echoed sample to the current sample, with a multiplier
-                        audioSequence.data[i] += delayLineOutput * multiplier;
+                        delayLineOutput *= multiplier;
+                        audioSequence.data[i] += delayLineOutput;
 
                         // Put the current sample into the delay line
                         delayLine[i % delayLineSize] = audioSequence.data[i];
